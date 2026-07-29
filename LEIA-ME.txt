@@ -1,0 +1,66 @@
+SNOV.IO — PAINEL WEB
+=====================
+
+O que é:
+Uma aplicação web com 4 botões:
+  1. Criar campanha LinkedIn (formulário ou importar .docx)
+  2. Criar campanha E-mail (formulário ou importar .docx)
+  3. Gerar relatório diário em CSV (formato do CRM) de uma campanha ativa
+  4. Exportar TODAS as campanhas ativas de uma vez num ZIP
+
+COMO RODAR
+----------
+1. Abra um terminal na pasta: C:\Users\Vinícius\snov-scripts\webapp
+2. Rode: node server.js
+3. Abra no navegador: http://localhost:3000
+4. Senha do painel (troque em .env se quiser): grace2026
+
+CRIAR CAMPANHA DE E-MAIL — COMO FUNCIONA
+-----------------------------------------
+A API do Snov.io cria a campanha e a lista automaticamente, mas não salva o
+texto (assunto/corpo) dos e-mails — isso só a interface web do Snov faz.
+Tentamos automatizar isso com um navegador headless (Playwright), mas o
+Snov.io tem proteção anti-bot que bloqueia esse tipo de login automatizado
+de forma inconsistente, então desativamos essa parte para não arriscar sua
+conta.
+
+Por isso, ao criar uma campanha de e-mail, o painel:
+  1. Cria a campanha e a lista de verdade via API (rápido, confiável).
+  2. Mostra cada assunto/corpo pronto com botão "Copiar", e o link direto
+     da campanha — você só cola em cada etapa (leva menos de 1 minuto).
+
+As variáveis SNOV_LOGIN_EMAIL/SNOV_LOGIN_PASSWORD no .env não são mais
+necessárias (pode deixar em branco ou apagar).
+
+TUDO isso (LinkedIn, e-mail, CSV, ZIP) já foi testado ao vivo e funciona.
+
+HOSPEDAR NA INTERNET (acessar do celular)
+------------------------------------------
+Este app roda localmente por padrão. Para acessar de qualquer lugar, você
+precisa hospedar em um serviço como Render, Railway ou uma VPS — todos que
+permitam processos Node.js de longa duração (por causa das exportações
+demoradas; NÃO funciona bem em hospedagem "serverless" tipo Vercel puro).
+
+Passo a passo geral (varia por serviço):
+  1. Crie uma conta no serviço escolhido (isso eu não posso fazer por você).
+  2. Suba esta pasta (webapp/) — normalmente via GitHub ou upload direto.
+  3. Configure as mesmas variáveis do .env como "Environment Variables" no
+     painel do serviço (NUNCA suba o arquivo .env para o GitHub — o
+     .gitignore já está configurado para ignorá-lo).
+  4. Comando de start: node server.js
+  5. Troque APP_PASSWORD por uma senha forte, já que o app ficará exposto
+     na internet.
+
+Me chame quando escolher o serviço que vai usar (Render costuma ser o mais
+simples pra isso) que eu te ajudo a configurar o restante.
+
+ARQUIVOS
+--------
+server.js              -> servidor Express (todas as rotas)
+lib/snov-api.js         -> chamadas à API do Snov.io
+lib/linkedin-sequence.js -> monta a sequência de campanha LinkedIn
+lib/daily-report.js     -> monta os CSVs (formato CRM e bruto)
+lib/browser-automation.js -> (não usado atualmente — automação via Playwright desativada)
+lib/docx-parser.js      -> extrai texto de arquivos .docx
+public/                 -> frontend (HTML/CSS/JS)
+.env                    -> suas credenciais (NÃO compartilhe este arquivo)

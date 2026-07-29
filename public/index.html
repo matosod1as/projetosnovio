@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snov.io — Painel</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="login-screen" class="screen">
+    <div class="login-box">
+      <h1>Snov.io — Painel</h1>
+      <input id="login-password" type="password" placeholder="Senha do painel" />
+      <button id="login-btn">Entrar</button>
+      <p id="login-error" class="error"></p>
+    </div>
+  </div>
+
+  <div id="app-screen" class="screen hidden">
+    <header>
+      <h1>Snov.io — Painel</h1>
+      <button id="logout-btn" class="link-btn">Sair</button>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="linkedin">Criar campanha LinkedIn</button>
+      <button class="tab-btn" data-tab="email">Criar campanha E-mail</button>
+      <button class="tab-btn" data-tab="report">Relatório diário (CSV)</button>
+      <button class="tab-btn" data-tab="export">Exportar todas as ativas (ZIP)</button>
+    </nav>
+
+    <!-- LINKEDIN -->
+    <section id="tab-linkedin" class="tab-panel">
+      <h2>Nova campanha de LinkedIn</h2>
+      <div class="field">
+        <label>Importar textos de um .docx (opcional)</label>
+        <input type="file" id="li-docx" accept=".docx" />
+        <div id="li-docx-preview" class="docx-preview hidden"></div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Título da campanha</label>
+          <input id="li-title" type="text" placeholder="Ex: Empresa X - Agosto 26" />
+        </div>
+        <div class="field">
+          <label>Conta de LinkedIn</label>
+          <select id="li-account"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Lista de destinatários</label>
+        <div class="radio-row">
+          <label><input type="radio" name="li-list-mode" value="new" checked /> Criar lista nova (vazia)</label>
+          <label><input type="radio" name="li-list-mode" value="existing" /> Usar lista existente</label>
+        </div>
+        <input id="li-list-name" type="text" placeholder="Nome da nova lista" />
+        <select id="li-list-existing" class="hidden"></select>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Espera após convite (dias)</label><input id="li-wait-conn" type="number" value="7" /></div>
+        <div class="field"><label>Espera 1 (dias)</label><input id="li-delay1" type="number" value="4" /></div>
+        <div class="field"><label>Espera 2 (dias)</label><input id="li-delay2" type="number" value="8" /></div>
+      </div>
+      <div class="field">
+        <label>1. Convite de conexão (máx. 200 caracteres, use {{full_name}})</label>
+        <textarea id="li-msg-invite" rows="3"></textarea>
+        <span class="char-count" id="li-invite-count">0 / 200</span>
+      </div>
+      <div class="field">
+        <label>2. Mensagem após conectar</label>
+        <textarea id="li-msg-connect" rows="4"></textarea>
+      </div>
+      <div class="field">
+        <label>3. Mensagem de follow-up 1</label>
+        <textarea id="li-msg-f1" rows="4"></textarea>
+      </div>
+      <div class="field">
+        <label>4. Mensagem de follow-up 2 (final)</label>
+        <textarea id="li-msg-f2" rows="4"></textarea>
+      </div>
+      <div class="field">
+        <label>5. Assunto do InMail (caso não conecte)</label>
+        <input id="li-inmail-subject" type="text" />
+      </div>
+      <div class="field">
+        <label>5. Corpo do InMail</label>
+        <textarea id="li-inmail-body" rows="4"></textarea>
+      </div>
+      <button id="li-create-btn" class="primary-btn">Criar campanha</button>
+      <div id="li-result" class="result hidden"></div>
+    </section>
+
+    <!-- EMAIL -->
+    <section id="tab-email" class="tab-panel hidden">
+      <h2>Nova campanha de E-mail</h2>
+      <p class="hint">A campanha e a lista são criadas automaticamente. O texto de cada e-mail (assunto/corpo) a API
+        do Snov.io não salva sozinha — depois de criar, você recebe cada etapa pronta pra copiar e colar direto na
+        campanha (leva menos de 1 minuto).</p>
+      <div class="field">
+        <label>Importar textos de um .docx (opcional)</label>
+        <input type="file" id="em-docx" accept=".docx" />
+        <div id="em-docx-preview" class="docx-preview hidden"></div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Título da campanha</label>
+          <input id="em-title" type="text" />
+        </div>
+        <div class="field">
+          <label>Conta de e-mail (ID da conta no Snov.io)</label>
+          <input id="em-account" type="text" placeholder="Ex: 930585" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Lista de destinatários</label>
+        <div class="radio-row">
+          <label><input type="radio" name="em-list-mode" value="new" checked /> Criar lista nova (vazia)</label>
+          <label><input type="radio" name="em-list-mode" value="existing" /> Usar lista existente</label>
+        </div>
+        <input id="em-list-name" type="text" placeholder="Nome da nova lista" />
+        <select id="em-list-existing" class="hidden"></select>
+      </div>
+
+      <div id="em-emails-container"></div>
+      <button id="em-add-email" type="button" class="secondary-btn">+ Adicionar e-mail</button>
+      <br /><br />
+      <button id="em-create-btn" class="primary-btn">Criar campanha</button>
+      <div id="em-progress" class="progress hidden"></div>
+      <div id="em-result" class="result hidden"></div>
+    </section>
+
+    <!-- REPORT -->
+    <section id="tab-report" class="tab-panel hidden">
+      <h2>Relatório diário (CSV)</h2>
+      <div class="grid2">
+        <div class="field">
+          <label>Campanha ativa</label>
+          <select id="rp-campaign"></select>
+        </div>
+        <div class="field">
+          <label>Formato</label>
+          <select id="rp-format">
+            <option value="crm">Formato do CRM (data, servico, leads_*)</option>
+            <option value="raw">Bruto (um evento por linha)</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>De</label><input id="rp-from" type="date" /></div>
+        <div class="field"><label>Até</label><input id="rp-to" type="date" /></div>
+      </div>
+      <div class="field">
+        <label>Datas com oportunidades comerciais (leads_qualified) — opcional</label>
+        <div id="rp-qualified-rows"></div>
+        <button id="rp-add-qualified" type="button" class="secondary-btn">+ Adicionar data</button>
+      </div>
+      <button id="rp-generate-btn" class="primary-btn">Gerar e baixar CSV</button>
+      <div id="rp-result" class="result hidden"></div>
+    </section>
+
+    <!-- EXPORT ALL -->
+    <section id="tab-export" class="tab-panel hidden">
+      <h2>Exportar todas as campanhas ativas</h2>
+      <p class="hint">Gera um CSV por campanha ativa (desde o início de cada uma até hoje, ou o período que escolher) e baixa tudo num ZIP.</p>
+      <div class="grid2">
+        <div class="field"><label>De (opcional — padrão: início de cada campanha)</label><input id="ex-from" type="date" /></div>
+        <div class="field"><label>Até (opcional — padrão: hoje)</label><input id="ex-to" type="date" /></div>
+      </div>
+      <div class="field">
+        <label>Formato</label>
+        <select id="ex-format">
+          <option value="crm">Formato do CRM (data, servico, leads_*)</option>
+          <option value="raw">Bruto (um evento por linha)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Excluir campanhas (opcional)</label>
+        <div id="ex-exclude-list"></div>
+      </div>
+      <button id="ex-run-btn" class="primary-btn">Extrair todas e gerar ZIP</button>
+      <div id="ex-progress" class="progress hidden"></div>
+      <div id="ex-result" class="result hidden"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
