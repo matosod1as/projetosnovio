@@ -209,15 +209,19 @@
     <!-- CHECK REPLIES -->
     <section id="tab-replies" class="tab-panel hidden">
       <h2>Verificar respostas</h2>
-      <p class="hint">Escolha a campanha e a data — se houver resposta nesse dia, mostra o nome (e um trecho) de quem respondeu.</p>
+      <p class="hint">Escolha a campanha e o período — se houver respostas nesses dias, mostra o nome (e um trecho) de quem respondeu.</p>
+      <div class="field">
+        <label>Campanha ativa</label>
+        <select id="rc-campaign"></select>
+      </div>
       <div class="grid2">
         <div class="field">
-          <label>Campanha ativa</label>
-          <select id="rc-campaign"></select>
+          <label>De</label>
+          <input id="rc-from" type="date" />
         </div>
         <div class="field">
-          <label>Data</label>
-          <input id="rc-date" type="date" />
+          <label>Até</label>
+          <input id="rc-to" type="date" />
         </div>
       </div>
       <button id="rc-check-btn" class="primary-btn">Verificar</button>

@@ -253,15 +253,17 @@ app.post('/api/reports/daily', requireAuth, async (req, res) => {
   }
 });
 
-// ---------- Verificar respostas de uma campanha numa data ----------
+// ---------- Verificar respostas de uma campanha num período ----------
 app.post('/api/replies/check', requireAuth, async (req, res) => {
   try {
-    const { campaignId, date, servico } = req.body || {};
-    if (!campaignId || !date) return res.status(400).json({ error: 'Informe campaignId e date' });
+    const { campaignId, servico } = req.body || {};
+    const from = req.body?.from || req.body?.date;
+    const to = req.body?.to || req.body?.date;
+    if (!campaignId || !from || !to) return res.status(400).json({ error: 'Informe campaignId, from e to' });
 
     let replies = [];
     if (servico === 'linkedin') {
-      const activity = await snov.getAllActivity(campaignId, date, date);
+      const activity = await snov.getAllActivity(campaignId, from, to);
       replies = activity
         .filter(e => e.event_type === 'replied')
         .map(e => ({
@@ -272,8 +274,8 @@ app.post('/api/replies/check', requireAuth, async (req, res) => {
         }));
     } else {
       const allReplies = await snov.getAllReplies(campaignId);
-      const fromDate = new Date(date + 'T00:00:00');
-      const toDate = new Date(date + 'T23:59:59');
+      const fromDate = new Date(from + 'T00:00:00');
+      const toDate = new Date(to + 'T23:59:59');
       replies = allReplies
         .filter(r => {
           if (!r.visited_at || !r.visited_at.date) return false;
@@ -288,6 +290,7 @@ app.post('/api/replies/check', requireAuth, async (req, res) => {
         }));
     }
 
+    replies.sort((a, b) => new Date(a.time) - new Date(b.time));
     res.json({ found: replies.length > 0, count: replies.length, replies });
   } catch (e) {
     res.status(500).json({ error: e.message });

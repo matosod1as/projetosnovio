@@ -447,10 +447,11 @@ $('#rc-check-btn').addEventListener('click', async () => {
   const sel = $('#rc-campaign');
   const campaignId = Number(sel.value);
   const servico = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.type : 'email';
-  const date = $('#rc-date').value;
+  const from = $('#rc-from').value;
+  const to = $('#rc-to').value;
 
-  if (!campaignId || !date) {
-    resultEl.innerHTML = '<span class="error">Selecione a campanha e a data.</span>';
+  if (!campaignId || !from || !to) {
+    resultEl.innerHTML = '<span class="error">Selecione a campanha e o período.</span>';
     return;
   }
 
@@ -458,16 +459,18 @@ $('#rc-check-btn').addEventListener('click', async () => {
   btn.textContent = 'Verificando...';
   resultEl.innerHTML = 'Buscando respostas...';
 
+  const periodLabel = from === to ? from : `${from} a ${to}`;
+
   try {
     const res = await api('/api/replies/check', {
       method: 'POST',
-      body: JSON.stringify({ campaignId, date, servico }),
+      body: JSON.stringify({ campaignId, from, to, servico }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro ao verificar respostas');
 
     if (!data.found) {
-      resultEl.innerHTML = `Nenhuma resposta encontrada em <strong>${date}</strong> para essa campanha.`;
+      resultEl.innerHTML = `Nenhuma resposta encontrada em <strong>${periodLabel}</strong> para essa campanha.`;
     } else {
       const rows = data.replies
         .map(r => {
@@ -476,7 +479,7 @@ $('#rc-check-btn').addEventListener('click', async () => {
           return `<div style="margin-bottom:12px"><strong>${who}</strong>${r.time ? ` — ${escapeHtml(String(r.time))}` : ''}${snippet}</div>`;
         })
         .join('');
-      resultEl.innerHTML = `<span class="success-text">${data.count} resposta(s) encontrada(s) em ${date}:</span><br><br>${rows}`;
+      resultEl.innerHTML = `<span class="success-text">${data.count} resposta(s) encontrada(s) em ${periodLabel}:</span><br><br>${rows}`;
     }
   } catch (e) {
     resultEl.innerHTML = `<span class="error">${e.message}</span>`;
