@@ -95,6 +95,11 @@ async function loadMeta() {
       c => `<div class="exclude-row"><label><input type="checkbox" value="${c.id}" class="ex-exclude-cb"/> ${c.name}</label></div>`
     )
     .join('');
+
+  const rcCampaignSel = $('#rc-campaign');
+  rcCampaignSel.innerHTML = META.activeCampaigns
+    .map(c => `<option value="${c.id}" data-type="${c.type}">${c.name} (${c.type})</option>`)
+    .join('');
 }
 
 function setupListModeToggle(prefix) {
@@ -430,6 +435,54 @@ $('#ex-run-btn').addEventListener('click', async () => {
     resultEl.innerHTML = `<span class="error">${e.message}</span>`;
     btn.disabled = false;
     btn.textContent = 'Extrair todas e gerar ZIP';
+  }
+});
+
+// ---------- Verificar respostas ----------
+$('#rc-check-btn').addEventListener('click', async () => {
+  const btn = $('#rc-check-btn');
+  const resultEl = $('#rc-result');
+  resultEl.classList.remove('hidden');
+
+  const sel = $('#rc-campaign');
+  const campaignId = Number(sel.value);
+  const servico = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.type : 'email';
+  const date = $('#rc-date').value;
+
+  if (!campaignId || !date) {
+    resultEl.innerHTML = '<span class="error">Selecione a campanha e a data.</span>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  resultEl.innerHTML = 'Buscando respostas...';
+
+  try {
+    const res = await api('/api/replies/check', {
+      method: 'POST',
+      body: JSON.stringify({ campaignId, date, servico }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao verificar respostas');
+
+    if (!data.found) {
+      resultEl.innerHTML = `Nenhuma resposta encontrada em <strong>${date}</strong> para essa campanha.`;
+    } else {
+      const rows = data.replies
+        .map(r => {
+          const who = escapeHtml(r.name || '(sem nome)') + (r.email ? ` <span class="hint">&lt;${escapeHtml(r.email)}&gt;</span>` : '');
+          const snippet = r.snippet ? `<div class="hint" style="margin-top:4px">"${escapeHtml(r.snippet)}"</div>` : '';
+          return `<div style="margin-bottom:12px"><strong>${who}</strong>${r.time ? ` — ${escapeHtml(String(r.time))}` : ''}${snippet}</div>`;
+        })
+        .join('');
+      resultEl.innerHTML = `<span class="success-text">${data.count} resposta(s) encontrada(s) em ${date}:</span><br><br>${rows}`;
+    }
+  } catch (e) {
+    resultEl.innerHTML = `<span class="error">${e.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verificar';
   }
 });
 

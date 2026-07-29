@@ -50,6 +50,7 @@
       <button class="tab-btn" data-tab="email">Criar campanha E-mail</button>
       <button class="tab-btn" data-tab="report">Relatório diário (CSV)</button>
       <button class="tab-btn" data-tab="export">Exportar todas as ativas (ZIP)</button>
+      <button class="tab-btn" data-tab="replies">Verificar respostas</button>
     </nav>
 
     <!-- LINKEDIN -->
@@ -203,6 +204,24 @@
       <button id="ex-run-btn" class="primary-btn">Extrair todas e gerar ZIP</button>
       <div id="ex-progress" class="progress hidden"></div>
       <div id="ex-result" class="result hidden"></div>
+    </section>
+
+    <!-- CHECK REPLIES -->
+    <section id="tab-replies" class="tab-panel hidden">
+      <h2>Verificar respostas</h2>
+      <p class="hint">Escolha a campanha e a data — se houver resposta nesse dia, mostra o nome (e um trecho) de quem respondeu.</p>
+      <div class="grid2">
+        <div class="field">
+          <label>Campanha ativa</label>
+          <select id="rc-campaign"></select>
+        </div>
+        <div class="field">
+          <label>Data</label>
+          <input id="rc-date" type="date" />
+        </div>
+      </div>
+      <button id="rc-check-btn" class="primary-btn">Verificar</button>
+      <div id="rc-result" class="result hidden"></div>
     </section>
   </div>
 

@@ -9,7 +9,7 @@ const archiver = require('archiver');
 
 const { SnovClient } = require('./lib/snov-api');
 const { buildLinkedinSequence } = require('./lib/linkedin-sequence');
-const { buildDailyReportCsv, buildRawEventsCsv } = require('./lib/daily-report');
+const { buildDailyReportCsv, buildRawEventsCsv, stripHtml } = require('./lib/daily-report');
 const { extractDocxLines } = require('./lib/docx-parser');
 // Automação de navegador (Playwright) foi desativada por instabilidade com a
 // proteção anti-bot do Snov.io — veja lib/browser-automation.js se quiser reativar.
@@ -248,6 +248,47 @@ app.post('/api/reports/daily', requireAuth, async (req, res) => {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="relatorio_${campaignId}.csv"`);
     res.send(csv);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ---------- Verificar respostas de uma campanha numa data ----------
+app.post('/api/replies/check', requireAuth, async (req, res) => {
+  try {
+    const { campaignId, date, servico } = req.body || {};
+    if (!campaignId || !date) return res.status(400).json({ error: 'Informe campaignId e date' });
+
+    let replies = [];
+    if (servico === 'linkedin') {
+      const activity = await snov.getAllActivity(campaignId, date, date);
+      replies = activity
+        .filter(e => e.event_type === 'replied')
+        .map(e => ({
+          name: e.recipient_name || null,
+          email: e.recipient_email || null,
+          time: e.event_time || null,
+          snippet: stripHtml(e.email_subject).slice(0, 200),
+        }));
+    } else {
+      const allReplies = await snov.getAllReplies(campaignId);
+      const fromDate = new Date(date + 'T00:00:00');
+      const toDate = new Date(date + 'T23:59:59');
+      replies = allReplies
+        .filter(r => {
+          if (!r.visited_at || !r.visited_at.date) return false;
+          const d = new Date(r.visited_at.date.replace(' ', 'T') + 'Z');
+          return d >= fromDate && d <= toDate;
+        })
+        .map(r => ({
+          name: r.prospect_name || null,
+          email: r.prospect_email || null,
+          time: r.visited_at.date,
+          snippet: stripHtml(r.emails && r.emails[0] && r.emails[0].email_body).slice(0, 200),
+        }));
+    }
+
+    res.json({ found: replies.length > 0, count: replies.length, replies });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
