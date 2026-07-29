@@ -24,23 +24,24 @@ function showApp() {
   loadMeta();
 }
 
-$('#login-btn').addEventListener('click', async () => {
+$('#login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('#login-btn');
   const password = $('#login-password').value;
+  btn.disabled = true;
   const res = await fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   });
   const data = await res.json();
+  btn.disabled = false;
   if (data.success) {
     $('#login-error').textContent = '';
     showApp();
   } else {
     $('#login-error').textContent = data.error || 'Senha incorreta';
   }
-});
-$('#login-password').addEventListener('keydown', e => {
-  if (e.key === 'Enter') $('#login-btn').click();
 });
 
 $('#logout-btn').addEventListener('click', async () => {
