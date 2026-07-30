@@ -10,6 +10,7 @@ const archiver = require('archiver');
 const { SnovClient } = require('./lib/snov-api');
 const { buildLinkedinSequence } = require('./lib/linkedin-sequence');
 const { buildDailyReportCsv, buildRawEventsCsv, stripHtml } = require('./lib/daily-report');
+const { replyKey, isMarked, mark: markReplied } = require('./lib/marked-replies');
 const { extractDocxLines } = require('./lib/docx-parser');
 // Automação de navegador (Playwright) foi desativada por instabilidade com a
 // proteção anti-bot do Snov.io — veja lib/browser-automation.js se quiser reativar.
@@ -291,10 +292,21 @@ app.post('/api/replies/check', requireAuth, async (req, res) => {
     }
 
     replies.sort((a, b) => new Date(a.time) - new Date(b.time));
+    replies = replies
+      .map(r => ({ ...r, key: replyKey(campaignId, servico, r) }))
+      .filter(r => !isMarked(r.key));
+
     res.json({ found: replies.length > 0, count: replies.length, replies });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+app.post('/api/replies/mark', requireAuth, (req, res) => {
+  const { key } = req.body || {};
+  if (!key) return res.status(400).json({ error: 'Informe key' });
+  markReplied(key);
+  res.json({ success: true });
 });
 
 // ---------- Exportar todas as campanhas ativas (ZIP) ----------

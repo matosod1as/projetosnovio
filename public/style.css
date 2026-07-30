@@ -445,3 +445,10 @@ input[type="radio"], input[type="checkbox"] { accent-color: var(--purple); }
 .exclude-row { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; margin-bottom: 4px; color: var(--muted); }
 
 .copy-btn.copied { color: var(--success); border-color: var(--success); }
+
+.reply-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.reply-row:last-child { border-bottom: none; }
+.mark-replied-btn:disabled { opacity: 0.5; cursor: default; }

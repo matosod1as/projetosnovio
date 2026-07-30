@@ -472,20 +472,62 @@ $('#rc-check-btn').addEventListener('click', async () => {
     if (!data.found) {
       resultEl.innerHTML = `Nenhuma resposta encontrada em <strong>${periodLabel}</strong> para essa campanha.`;
     } else {
-      const rows = data.replies
-        .map(r => {
-          const who = escapeHtml(r.name || '(sem nome)') + (r.email ? ` <span class="hint">&lt;${escapeHtml(r.email)}&gt;</span>` : '');
-          const snippet = r.snippet ? `<div class="hint" style="margin-top:4px">"${escapeHtml(r.snippet)}"</div>` : '';
-          return `<div style="margin-bottom:12px"><strong>${who}</strong>${r.time ? ` — ${escapeHtml(String(r.time))}` : ''}${snippet}</div>`;
-        })
-        .join('');
-      resultEl.innerHTML = `<span class="success-text">${data.count} resposta(s) encontrada(s) em ${periodLabel}:</span><br><br>${rows}`;
+      renderReplies(resultEl, data.replies, periodLabel);
     }
   } catch (e) {
     resultEl.innerHTML = `<span class="error">${e.message}</span>`;
   } finally {
     btn.disabled = false;
     btn.textContent = 'Verificar';
+  }
+});
+
+function renderReplies(resultEl, replies, periodLabel) {
+  resultEl.innerHTML = '';
+  const header = document.createElement('div');
+  header.innerHTML = `<span class="success-text">${replies.length} resposta(s) encontrada(s) em ${periodLabel}:</span>`;
+  resultEl.appendChild(header);
+
+  if (replies.length === 0) {
+    const done = document.createElement('div');
+    done.style.marginTop = '10px';
+    done.textContent = 'Todas as respostas desse período já foram marcadas como respondidas.';
+    resultEl.appendChild(done);
+    return;
+  }
+
+  replies.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'reply-row';
+    row.dataset.key = r.key;
+    const who = escapeHtml(r.name || '(sem nome)') + (r.email ? ` <span class="hint">&lt;${escapeHtml(r.email)}&gt;</span>` : '');
+    const snippet = r.snippet ? `<div class="hint" style="margin-top:4px">"${escapeHtml(r.snippet)}"</div>` : '';
+    row.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+        <div><strong>${who}</strong>${r.time ? ` — ${escapeHtml(String(r.time))}` : ''}${snippet}</div>
+        <button type="button" class="secondary-btn mark-replied-btn" style="flex-shrink:0">Marcar como respondido</button>
+      </div>`;
+    resultEl.appendChild(row);
+  });
+}
+
+$('#rc-result').addEventListener('click', async (e) => {
+  const btn = e.target.closest('.mark-replied-btn');
+  if (!btn) return;
+  const row = btn.closest('.reply-row');
+  const key = row.dataset.key;
+  btn.disabled = true;
+  btn.textContent = 'Marcando...';
+  try {
+    const res = await api('/api/replies/mark', { method: 'POST', body: JSON.stringify({ key }) });
+    if (!res.ok) throw new Error('Erro ao marcar');
+    row.style.transition = 'opacity 0.2s';
+    row.style.opacity = '0';
+    setTimeout(() => row.remove(), 200);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Marcar como respondido';
+    alert(err.message);
   }
 });
 
