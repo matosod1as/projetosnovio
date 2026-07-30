@@ -292,9 +292,9 @@ app.post('/api/replies/check', requireAuth, async (req, res) => {
     }
 
     replies.sort((a, b) => new Date(a.time) - new Date(b.time));
-    replies = replies
-      .map(r => ({ ...r, key: replyKey(campaignId, servico, r) }))
-      .filter(r => !isMarked(r.key));
+    replies = replies.map(r => ({ ...r, key: replyKey(campaignId, servico, r) }));
+    const marks = await Promise.all(replies.map(r => isMarked(r.key)));
+    replies = replies.filter((r, i) => !marks[i]);
 
     res.json({ found: replies.length > 0, count: replies.length, replies });
   } catch (e) {
@@ -302,11 +302,15 @@ app.post('/api/replies/check', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/replies/mark', requireAuth, (req, res) => {
-  const { key } = req.body || {};
-  if (!key) return res.status(400).json({ error: 'Informe key' });
-  markReplied(key);
-  res.json({ success: true });
+app.post('/api/replies/mark', requireAuth, async (req, res) => {
+  try {
+    const { key } = req.body || {};
+    if (!key) return res.status(400).json({ error: 'Informe key' });
+    await markReplied(key);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ---------- Exportar todas as campanhas ativas (ZIP) ----------

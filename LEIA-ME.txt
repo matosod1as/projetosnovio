@@ -2,11 +2,14 @@ SNOV.IO — PAINEL WEB
 =====================
 
 O que é:
-Uma aplicação web com 4 botões:
+Uma aplicação web com 5 abas:
   1. Criar campanha LinkedIn (formulário ou importar .docx)
   2. Criar campanha E-mail (formulário ou importar .docx)
   3. Gerar relatório diário em CSV (formato do CRM) de uma campanha ativa
   4. Exportar TODAS as campanhas ativas de uma vez num ZIP
+  5. Verificar respostas de uma campanha num período, com nome/e-mail/trecho
+     de quem respondeu, e um botão para marcar cada resposta como já tratada
+     (ela some da lista e não aparece mais em consultas futuras)
 
 COMO RODAR
 ----------
@@ -54,6 +57,28 @@ Passo a passo geral (varia por serviço):
 Me chame quando escolher o serviço que vai usar (Render costuma ser o mais
 simples pra isso) que eu te ajudo a configurar o restante.
 
+MARCAR RESPOSTAS COMO "JÁ TRATADA" — PERSISTÊNCIA
+--------------------------------------------------
+Por padrão, quando você marca uma resposta como respondida, isso fica salvo
+num arquivo local (webapp/data/marked-replies.json). No plano free do
+Render o disco NÃO é permanente — se o serviço reiniciar, esse arquivo pode
+ser apagado e as respostas marcadas voltariam a aparecer.
+
+Para isso não acontecer, o app suporta opcionalmente o Upstash Redis (banco
+gratuito, sem cartão de crédito, até 10 mil comandos/dia — mais que
+suficiente pra esse uso). Passo a passo:
+  1. Crie uma conta em https://upstash.com (grátis).
+  2. Crie um banco Redis (Create Database), qualquer região.
+  3. Na página do banco, vá em "REST API" e copie:
+       UPSTASH_REDIS_REST_URL
+       UPSTASH_REDIS_REST_TOKEN
+  4. Cole esses dois valores no seu .env local (ou nas Environment
+     Variables do Render, se já estiver hospedado).
+  5. Reinicie o app (ou aguarde o redeploy no Render).
+
+Sem essas duas variáveis, tudo continua funcionando normalmente — só que a
+marcação de "já respondido" pode se perder num restart do servidor.
+
 ARQUIVOS
 --------
 server.js              -> servidor Express (todas as rotas)
@@ -62,5 +87,6 @@ lib/linkedin-sequence.js -> monta a sequência de campanha LinkedIn
 lib/daily-report.js     -> monta os CSVs (formato CRM e bruto)
 lib/browser-automation.js -> (não usado atualmente — automação via Playwright desativada)
 lib/docx-parser.js      -> extrai texto de arquivos .docx
+lib/marked-replies.js   -> guarda quais respostas já foram marcadas (Upstash Redis ou arquivo local)
 public/                 -> frontend (HTML/CSS/JS)
 .env                    -> suas credenciais (NÃO compartilhe este arquivo)
