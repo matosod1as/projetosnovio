@@ -10,7 +10,7 @@ const archiver = require('archiver');
 const { SnovClient } = require('./lib/snov-api');
 const { buildLinkedinSequence } = require('./lib/linkedin-sequence');
 const { buildDailyReportCsv, buildRawEventsCsv, stripHtml } = require('./lib/daily-report');
-const { replyKey, isMarked, mark: markReplied } = require('./lib/marked-replies');
+const { replyKey, isMarked, mark: markReplied, usingRedis } = require('./lib/marked-replies');
 const { extractDocxLines } = require('./lib/docx-parser');
 // Automação de navegador (Playwright) foi desativada por instabilidade com a
 // proteção anti-bot do Snov.io — veja lib/browser-automation.js se quiser reativar.
@@ -300,6 +300,10 @@ app.post('/api/replies/check', requireAuth, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+app.get('/api/replies/status', requireAuth, (req, res) => {
+  res.json({ persistence: usingRedis ? 'upstash-redis' : 'arquivo-local' });
 });
 
 app.post('/api/replies/mark', requireAuth, async (req, res) => {
