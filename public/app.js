@@ -173,8 +173,16 @@ function autofillEmailFromDocx(email, previewEl) {
   if (email.matchedCount > 0) {
     $('#em-emails-container').innerHTML = '';
     email.emails.forEach(e => addEmailBlock(e.subject, e.body, e.waitDays ?? 4));
+    const notes = [];
+    if (email.detectedName) {
+      notes.push(
+        `o texto usa o nome "${email.detectedName}" — como a conta de e-mail é só um ID, não dá pra trocar automaticamente; ajuste manualmente se for outra pessoa`
+      );
+    }
     previewEl.classList.remove('hidden');
-    previewEl.innerHTML = `<strong>${email.matchedCount} e-mail(s) preenchido(s) automaticamente.</strong> Revise antes de criar.`;
+    previewEl.innerHTML = `<strong>${email.matchedCount} e-mail(s) preenchido(s) automaticamente.</strong>${
+      notes.length ? '<br>' + notes.map(n => `• ${n}`).join('<br>') : ' Revise antes de criar.'
+    }`;
   } else {
     previewEl.classList.remove('hidden');
     previewEl.innerHTML = 'Não reconheci o padrão de seções neste arquivo — preencha os e-mails manualmente.';
