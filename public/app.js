@@ -21,7 +21,27 @@ function showLogin() {
 function showApp() {
   $('#login-screen').classList.add('hidden');
   $('#app-screen').classList.remove('hidden');
-  loadMeta();
+  setMetaLoadingState();
+  loadMeta().catch(e => {
+    $$('.tab-panel select').forEach(sel => {
+      sel.innerHTML = '<option value="">Erro ao carregar — recarregue a página</option>';
+    });
+    console.error('Falha ao carregar dados do Snov.io:', e);
+    alert(
+      'Não foi possível carregar os dados do Snov.io (contas, listas, campanhas). ' +
+      'Se o painel ficou muito tempo sem uso, o servidor pode estar "acordando" — aguarde alguns segundos e recarregue a página.\n\nDetalhe: ' + e.message
+    );
+  });
+}
+
+function setMetaLoadingState() {
+  const selectIds = ['li-account', 'li-list-existing', 'em-list-existing', 'rp-campaign', 'rc-campaign'];
+  selectIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">Carregando…</option>';
+  });
+  const exExcludeList = $('#ex-exclude-list');
+  if (exExcludeList) exExcludeList.innerHTML = '<span class="hint">Carregando…</span>';
 }
 
 $('#login-form').addEventListener('submit', async (e) => {
