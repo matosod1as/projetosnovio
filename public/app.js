@@ -173,9 +173,21 @@ $('#li-create-btn').addEventListener('click', async () => {
   if (listMode === 'new') spec.list_name = $('#li-list-name').value.trim();
   else spec.list_id = Number($('#li-list-existing').value);
 
-  if (!spec.title || !spec.linkedin_account_id || !spec.messages.invite) {
+  const missing = [];
+  if (!spec.title) missing.push('título da campanha');
+  if (!spec.linkedin_account_id) missing.push('conta de LinkedIn');
+  if (!spec.messages.invite) missing.push('1. convite de conexão');
+  if (!spec.messages.after_connect) missing.push('2. mensagem após conectar');
+  if (!spec.messages.followup_1) missing.push('3. mensagem de follow-up 1');
+  if (!spec.messages.followup_2) missing.push('4. mensagem de follow-up 2');
+  if (!spec.messages.inmail_subject) missing.push('5. assunto do InMail');
+  if (!spec.messages.inmail_body) missing.push('5. corpo do InMail');
+  if (listMode === 'new' && !spec.list_name) missing.push('nome da nova lista');
+  if (listMode === 'existing' && !spec.list_id) missing.push('lista existente');
+
+  if (missing.length) {
     resultEl.classList.remove('hidden');
-    resultEl.innerHTML = '<span class="error">Preencha ao menos título, conta e mensagem de convite.</span>';
+    resultEl.innerHTML = `<span class="error">Preencha os campos obrigatórios: ${missing.join(', ')}.</span>`;
     return;
   }
 
