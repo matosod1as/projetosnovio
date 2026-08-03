@@ -12,6 +12,7 @@ const { buildLinkedinSequence } = require('./lib/linkedin-sequence');
 const { buildDailyReportCsv, buildRawEventsCsv, stripHtml } = require('./lib/daily-report');
 const { replyKey, isMarked, mark: markReplied, usingRedis } = require('./lib/marked-replies');
 const { extractDocxLines } = require('./lib/docx-parser');
+const { mapLinkedinDocx, mapEmailDocx } = require('./lib/docx-mapper');
 // Automação de navegador (Playwright) foi desativada por instabilidade com a
 // proteção anti-bot do Snov.io — veja lib/browser-automation.js se quiser reativar.
 
@@ -120,7 +121,9 @@ app.post('/api/docx-parse', requireAuth, upload.single('file'), async (req, res)
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     const lines = await extractDocxLines(req.file.buffer);
-    res.json({ lines });
+    const linkedin = mapLinkedinDocx(lines);
+    const email = mapEmailDocx(lines);
+    res.json({ lines, linkedin, email });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

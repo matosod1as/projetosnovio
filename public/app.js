@@ -122,7 +122,66 @@ setupListModeToggle('li');
 setupListModeToggle('em');
 
 // ---------- Docx parsing helper ----------
-async function handleDocxUpload(inputEl, previewEl) {
+function firstName(fullNameWithEmail) {
+  const namePart = (fullNameWithEmail || '').split('(')[0].trim();
+  return namePart.split(/\s+/)[0] || '';
+}
+
+function substituteName(text, detectedName, newFirstName) {
+  if (!text || !detectedName || !newFirstName) return text;
+  const re = new RegExp(`\\b${detectedName}\\b`, 'gi');
+  return text.replace(re, newFirstName);
+}
+
+function autofillLinkedinFromDocx(linkedin, previewEl) {
+  const accountSel = $('#li-account');
+  const accountLabel = accountSel.selectedOptions[0] ? accountSel.selectedOptions[0].textContent : '';
+  const newFirstName = firstName(accountLabel);
+  const { fields, detectedName, titleGuess, matchedCount } = linkedin;
+
+  const filled = {};
+  Object.entries(fields).forEach(([key, value]) => {
+    filled[key] = substituteName(value, detectedName, newFirstName);
+  });
+
+  if (!$('#li-title').value.trim() && titleGuess) $('#li-title').value = titleGuess;
+  if (filled.invite) $('#li-msg-invite').value = filled.invite;
+  if (filled.after_connect) $('#li-msg-connect').value = filled.after_connect;
+  if (filled.followup_1) $('#li-msg-f1').value = filled.followup_1;
+  if (filled.followup_2) $('#li-msg-f2').value = filled.followup_2;
+  if (filled.inmail_body) $('#li-inmail-body').value = filled.inmail_body;
+  $('#li-msg-invite').dispatchEvent(new Event('input'));
+
+  const notes = [];
+  if (detectedName && newFirstName) notes.push(`nome "${detectedName}" trocado por "${newFirstName}" (conta selecionada)`);
+  notes.push('assunto do InMail não veio no arquivo — preencha manualmente');
+  if (stripHtmlLike(filled.invite).length > 200) notes.push('convite de conexão passou de 200 caracteres — encurte antes de criar');
+
+  previewEl.classList.remove('hidden');
+  previewEl.innerHTML = matchedCount > 0
+    ? `<strong>${matchedCount}/5 mensagens preenchidas automaticamente.</strong><br>${notes.map(n => `• ${n}`).join('<br>')}`
+    : 'Não reconheci o padrão de seções neste arquivo — preencha os campos manualmente.';
+}
+
+function stripHtmlLike(s) {
+  return (s || '').trim();
+}
+
+function autofillEmailFromDocx(email, previewEl) {
+  if (!$('#em-title').value.trim() && email.titleGuess) $('#em-title').value = email.titleGuess;
+
+  if (email.matchedCount > 0) {
+    $('#em-emails-container').innerHTML = '';
+    email.emails.forEach(e => addEmailBlock(e.subject, e.body, e.waitDays ?? 4));
+    previewEl.classList.remove('hidden');
+    previewEl.innerHTML = `<strong>${email.matchedCount} e-mail(s) preenchido(s) automaticamente.</strong> Revise antes de criar.`;
+  } else {
+    previewEl.classList.remove('hidden');
+    previewEl.innerHTML = 'Não reconheci o padrão de seções neste arquivo — preencha os e-mails manualmente.';
+  }
+}
+
+function handleDocxUpload(inputEl, previewEl, kind) {
   inputEl.addEventListener('change', async () => {
     const file = inputEl.files[0];
     if (!file) return;
@@ -130,15 +189,17 @@ async function handleDocxUpload(inputEl, previewEl) {
     formData.append('file', file);
     const res = await fetch('/api/docx-parse', { method: 'POST', body: formData });
     const data = await res.json();
-    if (data.lines) {
+    if (data.error) {
       previewEl.classList.remove('hidden');
-      previewEl.textContent = data.lines.join('\n');
-      previewEl.dataset.lines = JSON.stringify(data.lines);
+      previewEl.innerHTML = `<span class="error">${data.error}</span>`;
+      return;
     }
+    if (kind === 'linkedin') autofillLinkedinFromDocx(data.linkedin, previewEl);
+    else autofillEmailFromDocx(data.email, previewEl);
   });
 }
-handleDocxUpload($('#li-docx'), $('#li-docx-preview'));
-handleDocxUpload($('#em-docx'), $('#em-docx-preview'));
+handleDocxUpload($('#li-docx'), $('#li-docx-preview'), 'linkedin');
+handleDocxUpload($('#em-docx'), $('#em-docx-preview'), 'email');
 
 // ---------- LinkedIn char counter ----------
 $('#li-msg-invite').addEventListener('input', () => {
