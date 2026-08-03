@@ -172,6 +172,7 @@ function autofillEmailFromDocx(email, previewEl) {
 
   if (email.matchedCount > 0) {
     $('#em-emails-container').innerHTML = '';
+    emailBlockCount = 0;
     email.emails.forEach(e => addEmailBlock(e.subject, e.body, e.waitDays ?? 4));
     const notes = [];
     if (email.detectedName) {
@@ -331,9 +332,20 @@ $('#em-create-btn').addEventListener('click', async () => {
   if (listMode === 'new') spec.list_name = $('#em-list-name').value.trim();
   else spec.list_id = Number($('#em-list-existing').value);
 
-  if (!spec.title || !spec.email_account_id || emails.length === 0 || emails.some(e => !e.subject || !e.body)) {
+  const missing = [];
+  if (!spec.title) missing.push('título da campanha');
+  if (!spec.email_account_id) missing.push('conta de e-mail (ID)');
+  if (listMode === 'new' && !spec.list_name) missing.push('nome da nova lista');
+  if (listMode === 'existing' && !spec.list_id) missing.push('lista existente');
+  if (emails.length === 0) missing.push('pelo menos um e-mail');
+  emails.forEach((e, i) => {
+    if (!e.subject) missing.push(`e-mail ${i + 1}: assunto`);
+    if (!e.body) missing.push(`e-mail ${i + 1}: corpo`);
+  });
+
+  if (missing.length) {
     resultEl.classList.remove('hidden');
-    resultEl.innerHTML = '<span class="error">Preencha título, conta e todos os e-mails (assunto + corpo).</span>';
+    resultEl.innerHTML = `<span class="error">Preencha os campos obrigatórios: ${missing.join(', ')}.</span>`;
     return;
   }
 
